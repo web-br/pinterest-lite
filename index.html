@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>Pinterest Lite — Arquivos</title>
+  <style>
+    :root{
+      --bg:#f7f7f7; --card:#fff; --text:#171717; --muted:#777;
+      --line:#e9e9e9; --accent:#e60023; --shadow:0 2px 14px rgba(0,0,0,.07);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+    button,input{font:inherit}
+    a{text-decoration:none;color:inherit}
+
+    header{
+      position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);
+      backdrop-filter:blur(14px);border-bottom:1px solid var(--line);
+    }
+    .top{
+      height:64px;display:flex;align-items:center;gap:14px;
+      max-width:1500px;margin:auto;padding:8px 18px;
+    }
+    .logo{font-size:21px;font-weight:800;white-space:nowrap}
+    .logo span{color:var(--accent)}
+    .search{
+      flex:1;display:flex;align-items:center;background:#eee;border-radius:24px;
+      height:44px;padding:0 15px;min-width:80px;
+    }
+    .search svg{width:20px;height:20px;flex:none;opacity:.65}
+    .search input{border:0;outline:0;background:transparent;width:100%;padding:0 10px;font-size:15px}
+    .refresh{
+      border:0;background:#eee;border-radius:50%;width:44px;height:44px;cursor:pointer;
+      display:grid;place-items:center;font-size:19px;
+    }
+    .refresh:active{transform:scale(.94)}
+    .stats{max-width:1500px;margin:auto;padding:10px 18px 2px;color:var(--muted);font-size:13px}
+
+    main{max-width:1500px;margin:auto;padding:16px 14px 50px}
+    .filters{display:flex;gap:8px;overflow:auto;padding:0 4px 16px;scrollbar-width:none}
+    .filters::-webkit-scrollbar{display:none}
+    .chip{
+      border:0;background:#fff;border:1px solid var(--line);border-radius:18px;
+      padding:8px 13px;cursor:pointer;white-space:nowrap;font-size:13px;
+    }
+    .chip.active{background:#171717;color:#fff;border-color:#171717}
+
+    .grid{
+      column-count:6;column-gap:14px;
+    }
+    .pin{
+      break-inside:avoid;margin:0 0 14px;background:var(--card);border-radius:15px;
+      overflow:hidden;box-shadow:var(--shadow);position:relative;
+    }
+    .media{
+      width:100%;display:block;background:#eee;min-height:90px;
+      position:relative;overflow:hidden;
+    }
+    .media img,.media video{width:100%;height:auto;display:block;object-fit:cover}
+    .file-preview{
+      min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:24px;text-align:center;background:linear-gradient(145deg,#f0f0f0,#fafafa);
+    }
+    .file-icon{font-size:46px;margin-bottom:10px}
+    .file-ext{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase}
+    .body{padding:11px 12px 12px}
+    .name{font-size:14px;font-weight:700;line-height:1.35;word-break:break-word}
+    .meta{font-size:12px;color:var(--muted);margin-top:6px}
+    .actions{display:flex;gap:7px;margin-top:10px}
+    .btn{
+      flex:1;border:0;border-radius:9px;padding:9px 8px;cursor:pointer;font-size:12px;font-weight:700;
+    }
+    .download{background:#111;color:#fff}
+    .open{background:#eee;color:#111}
+    .download:active,.open:active{transform:scale(.98)}
+    .error,.empty,.loading{
+      text-align:center;padding:55px 20px;color:var(--muted);font-size:14px;
+      grid-column:1/-1;
+    }
+    .loader{
+      width:34px;height:34px;border:3px solid #ddd;border-top-color:#111;
+      border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .modal{
+      position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;
+      display:none;align-items:center;justify-content:center;padding:20px;
+    }
+    .modal.show{display:flex}
+    .modal-box{
+      background:#fff;border-radius:16px;max-width:1000px;max-height:92vh;width:100%;
+      overflow:auto;position:relative;padding:16px;
+    }
+    .close{
+      position:absolute;right:12px;top:12px;width:38px;height:38px;border:0;
+      border-radius:50%;background:#eee;cursor:pointer;font-size:20px;z-index:2;
+    }
+    .modal-content img,.modal-content video{max-width:100%;max-height:75vh;display:block;margin:auto}
+    .modal-title{font-weight:800;margin:8px 45px 12px 0;word-break:break-word}
+    .toast{
+      position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);
+      background:#111;color:#fff;padding:11px 16px;border-radius:22px;font-size:13px;
+      opacity:0;pointer-events:none;transition:.25s;z-index:200;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    @media(max-width:1200px){.grid{column-count:5}}
+    @media(max-width:950px){.grid{column-count:4}}
+    @media(max-width:700px){
+      .top{padding:8px 12px}.logo{font-size:18px}
+      .grid{column-count:3;column-gap:9px}
+      .pin{margin-bottom:9px;border-radius:11px}
+      .body{padding:8px}
+      .actions{flex-direction:column;gap:5px}
+      .btn{padding:8px}
+    }
+    @media(max-width:480px){
+      .grid{column-count:2;column-gap:8px}
+      .pin{margin-bottom:8px}
+      .stats{padding-left:12px}
+      .search{height:40px}
+      .refresh{width:40px;height:40px}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="logo">Pinterest <span>Lite</span></div>
+    <label class="search" aria-label="Pesquisar arquivos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path>
+      </svg>
+      <input id="search" type="search" placeholder="Pesquisar arquivos..." autocomplete="off">
+    </label>
+    <button class="refresh" id="refresh" title="Atualizar" aria-label="Atualizar">↻</button>
+  </div>
+  <div class="stats" id="stats">Carregando arquivos...</div>
+</header>
+
+<main>
+  <div class="filters" id="filters"></div>
+  <section class="grid" id="grid">
+    <div class="loading"><div class="loader"></div>Carregando arquivos do GitHub...</div>
+  </section>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <button class="close" id="close" aria-label="Fechar">×</button>
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "https://api.github.com/repos/web-br/pinterest-lite/contents/";
+const grid = document.getElementById("grid");
+const stats = document.getElementById("stats");
+const search = document.getElementById("search");
+const filters = document.getElementById("filters");
+const modal = document.getElementById("modal");
+const modalContent = document.getElementById("modalContent");
+const toast = document.getElementById("toast");
+
+let files = [];
+let currentFilter = "Todos";
+
+const imageExt = ["jpg","jpeg","png","gif","webp","avif","svg","bmp","ico"];
+const videoExt = ["mp4","webm","ogg","mov","m4v"];
+const audioExt = ["mp3","wav","ogg","m4a","flac"];
+const archiveExt = ["zip","rar","7z","tar","gz"];
+const codeExt = ["html","css","js","json","php","py","java","cpp","c","txt","md"];
+
+function ext(name){
+  const p = name.split(".");
+  return p.length > 1 ? p.pop().toLowerCase() : "";
+}
+function kind(name){
+  const e = ext(name);
+  if(imageExt.includes(e)) return "Imagem";
+  if(videoExt.includes(e)) return "Vídeo";
+  if(audioExt.includes(e)) return "Áudio";
+  if(archiveExt.includes(e)) return "Arquivo";
+  if(codeExt.includes(e)) return "Código";
+  return "Arquivo";
+}
+function icon(name){
+  const e = ext(name);
+  if(imageExt.includes(e)) return "🖼️";
+  if(videoExt.includes(e)) return "🎬";
+  if(audioExt.includes(e)) return "🎵";
+  if(archiveExt.includes(e)) return "📦";
+  if(e === "pdf") return "📕";
+  if(e === "php" || e === "js" || e === "html" || e === "css") return "💻";
+  return "📄";
+}
+function formatSize(bytes){
+  if(!bytes) return "0 B";
+  const units=["B","KB","MB","GB"];
+  let i=0,n=bytes;
+  while(n>=1024 && i<units.length-1){n/=1024;i++}
+  return `${n.toFixed(n>=100||i===0?0:1)} ${units[i]}`;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+function safeUrl(url){
+  try{
+    const u=new URL(url);
+    return (u.protocol==="https:" || u.protocol==="http:") ? u.href : "#";
+  }catch{return "#"}
+}
+
+async function load(){
+  grid.innerHTML='<div class="loading"><div class="loader"></div>Carregando arquivos do GitHub...</div>';
+  stats.textContent="Atualizando...";
+  try{
+    const res=await fetch(API,{headers:{Accept:"application/vnd.github+json"}});
+    if(!res.ok) throw new Error(`GitHub API: ${res.status}`);
+    const data=await res.json();
+    if(!Array.isArray(data)) throw new Error("A API não retornou uma lista.");
+    files=data.filter(x=>x && x.type==="file" && x.download_url);
+    buildFilters();
+    render();
+  }catch(err){
+    grid.innerHTML=`<div class="error">Não foi possível carregar os arquivos.<br><small>${escapeHtml(err.message)}</small><br><br><button class="chip" onclick="load()">Tentar novamente</button></div>`;
+    stats.textContent="Erro ao carregar";
+  }
+}
+
+function buildFilters(){
+  const counts={};
+  files.forEach(f=>counts[kind(f.name)]=(counts[kind(f.name)]||0)+1);
+  const cats=["Todos",...Object.keys(counts).sort()];
+  filters.innerHTML=cats.map(c=>`<button class="chip ${c===currentFilter?"active":""}" data-filter="${escapeHtml(c)}">${escapeHtml(c)}${c==="Todos"?"":` · ${counts[c]}`}</button>`).join("");
+  filters.querySelectorAll(".chip").forEach(btn=>{
+    btn.onclick=()=>{
+      currentFilter=btn.dataset.filter;
+      filters.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));
+      btn.classList.add("active");
+      render();
+    };
+  });
+}
+
+function render(){
+  const q=search.value.trim().toLowerCase();
+  const list=files.filter(f=>{
+    const matchesFilter=currentFilter==="Todos" || kind(f.name)===currentFilter;
+    const matchesSearch=!q || f.name.toLowerCase().includes(q) || (f.path||"").toLowerCase().includes(q);
+    return matchesFilter && matchesSearch;
+  });
+  stats.textContent=`${list.length} arquivo${list.length===1?"":"s"} encontrado${list.length===1?"":"s"} · ${files.length} no repositório`;
+  if(!list.length){
+    grid.innerHTML='<div class="empty">Nenhum arquivo encontrado.</div>';
+    return;
+  }
+  grid.innerHTML=list.map(card).join("");
+}
+
+function card(f){
+  const e=ext(f.name), k=kind(f.name), url=safeUrl(f.download_url);
+  let media="";
+  if(imageExt.includes(e)){
+    media=`<div class="media"><img src="${url}" alt="${escapeHtml(f.name)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'file-preview\\'><div class=\\'file-icon\\'>🖼️</div><div class=\\'file-ext\\'>Imagem</div></div>'"></div>`;
+  }else if(videoExt.includes(e)){
+    media=`<div class="media"><video src="${url}" preload="metadata" muted playsinline controls></video></div>`;
+  }else if(audioExt.includes(e)){
+    media=`<div class="file-preview"><div class="file-icon">🎵</div><div class="file-ext">${escapeHtml(e)}</div><audio src="${url}" controls style="width:100%;margin-top:12px"></audio></div>`;
+  }else{
+    media=`<div class="file-preview"><div class="file-icon">${icon(f.name)}</div><div class="file-ext">${escapeHtml(e||"arquivo")} · ${escapeHtml(k)}</div></div>`;
+  }
+  return `<article class="pin">
+    ${media}
+    <div class="body">
+      <div class="name">${escapeHtml(f.name)}</div>
+      <div class="meta">${formatSize(f.size)} · ${escapeHtml(k)}</div>
+      <div class="actions">
+        <button class="btn open" onclick="preview(${JSON.stringify(f.download_url)},${JSON.stringify(f.name)},${JSON.stringify(e)})">Visualizar</button>
+        <a class="btn download" href="${url}" download="${escapeHtml(f.name)}" target="_blank" rel="noopener">Baixar</a>
+      </div>
+    </div>
+  </article>`;
+}
+
+function preview(url,name,e){
+  url=safeUrl(url);
+  let content="";
+  if(imageExt.includes(e)) content=`<img src="${url}" alt="${escapeHtml(name)}">`;
+  else if(videoExt.includes(e)) content=`<video src="${url}" controls autoplay></video>`;
+  else if(audioExt.includes(e)) content=`<div style="padding:30px;text-align:center;font-size:50px">🎵<br><audio src="${url}" controls style="width:100%;margin-top:20px"></audio></div>`;
+  else if(e==="pdf") content=`<iframe src="${url}" style="width:100%;height:70vh;border:0"></iframe>`;
+  else content=`<div style="padding:45px 20px;text-align:center;font-size:60px">${icon(name)}<div style="font-size:16px;margin:15px 0">Este tipo de arquivo não tem pré-visualização no navegador.</div><a class="btn download" style="display:inline-block;max-width:220px" href="${url}" download target="_blank" rel="noopener">Baixar arquivo</a></div>`;
+  modalContent.innerHTML=`<div class="modal-title">${escapeHtml(name)}</div>${content}`;
+  modal.classList.add("show");
+}
+function closeModal(){
+  modal.classList.remove("show");
+  modalContent.innerHTML="";
+}
+function showToast(msg){
+  toast.textContent=msg;toast.classList.add("show");
+  clearTimeout(showToast.t);
+  showToast.t=setTimeout(()=>toast.classList.remove("show"),2200);
+}
+
+search.addEventListener("input",render);
+document.getElementById("refresh").addEventListener("click",()=>{load();showToast("Atualizando arquivos...")});
+document.getElementById("close").addEventListener("click",closeModal);
+modal.addEventListener("click",e=>{if(e.target===modal)closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+load();
+</script>
+</body>
+</html>
